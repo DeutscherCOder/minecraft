@@ -18,16 +18,27 @@ jobs:
       - name: Selftest (echte Downloads + echter Fabric-Install)
         shell: pwsh
         run: |
-          mkdir -Force "$env:TEMP\mc-selftest" | Out-Null
-          .\install.ps1 -GameDir "$env:TEMP\mc-selftest"
-          Write-Host '--- Zweiter Lauf (Idempotenz) ---'
-          .\install.ps1 -GameDir "$env:TEMP\mc-selftest"
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path "$env:TEMP\mc-selftest" -Force | Out-Null
+          Write-Host '===== Lauf 1: frische Installation ====='
+          .\install.ps1 -GameDir "$env:TEMP\mc-selftest" 2>&1 | Tee-Object -FilePath "$env:TEMP\install-1.log"
+          Write-Host '===== Lauf 2: Idempotenz (nichts neues sichern) ====='
+          .\install.ps1 -GameDir "$env:TEMP\mc-selftest" 2>&1 | Tee-Object -FilePath "$env:TEMP\install-2.log"
 
       - name: Ergebnis-Verzeichnis zeigen
         shell: pwsh
         run: |
-          Get-ChildItem "$env:TEMP\mc-selftest\mods" | Select-Object Name, Length | Format-Table -AutoSize
-          Write-Host '--- Versionen ---'
+          Write-Host '--- mods\ ---'
+          Get-ChildItem "$env:TEMP\mc-selftest\mods" | Sort-Object Name | Select-Object Name, Length | Format-Table -AutoSize
+          Write-Host '--- versions\ (Fabric Loader) ---'
           Get-ChildItem "$env:TEMP\mc-selftest\versions" -Name
-          Write-Host '--- Backup ---'
+          Write-Host '--- mods-backup\ ---'
           Get-ChildItem "$env:TEMP\mc-selftest\mods-backup" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
+
+      - name: Transkript in Job-Summary schreiben
+        shell: pwsh
+        run: |
+          $mods = (Get-ChildItem "$env:TEMP\mc-selftest\mods" -Filter '*.jar').Count
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n## Lauf 1 (frisch)`n`n``````text`n$(Get-Content "$env:TEMP\install-1.log" -Raw)`n``````"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n## Lauf 2 (idempotent)`n`n``````text`n$(Get-Content "$env:TEMP\install-2.log" -Raw)`n``````"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n**JARs in mods\\:** $mods / 7"
