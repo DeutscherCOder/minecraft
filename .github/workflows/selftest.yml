@@ -25,20 +25,59 @@ jobs:
           Write-Host '===== Lauf 2: Idempotenz (nichts neues sichern) ====='
           .\install.ps1 -GameDir "$env:TEMP\mc-selftest" 2>&1 | Tee-Object -FilePath "$env:TEMP\install-2.log"
 
-      - name: Ergebnis-Verzeichnis zeigen
+      - name: "Verifikation: 7 Mods + Fabric + Idempotenz"
         shell: pwsh
         run: |
-          Write-Host '--- mods\ ---'
-          Get-ChildItem "$env:TEMP\mc-selftest\mods" | Sort-Object Name | Select-Object Name, Length | Format-Table -AutoSize
-          Write-Host '--- versions\ (Fabric Loader) ---'
-          Get-ChildItem "$env:TEMP\mc-selftest\versions" -Name
-          Write-Host '--- mods-backup\ ---'
-          Get-ChildItem "$env:TEMP\mc-selftest\mods-backup" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
+          $ErrorActionPreference = 'Stop'
+          $modsDir = "$env:TEMP\mc-selftest\mods"
+          $backup  = "$env:TEMP\mc-selftest\mods-backup"
+          $versions= "$env:TEMP\mc-selftest\versions"
+          $expected = (Get-Content config\mods.json -Raw | ConvertFrom-Json).mods
 
-      - name: Transkript in Job-Summary schreiben
+          # 1) genau die 7 erwarteten Dateien vorhanden, jede mit exakter Groesse
+          $count = @(Get-ChildItem $modsDir -Filter '*.jar').Count
+          if ($count -ne 7) { throw "mods\ soll 7 JARs haben, hat $count" }
+          foreach ($m in $expected) {
+            $p = Join-Path $modsDir $m.filename
+            if (-not (Test-Path $p)) { throw "Fehlt: $($m.filename)" }
+            $len = (Get-Item $p).Length
+            if ($len -ne [long]$m.size) { throw "Groesse falsch fuer $($m.filename): ist $len, soll $($m.size)" }
+          }
+
+          # 2) Fabric Loader wurde installiert (versions\ enthaelt fabric-loader-0.19.5-1.20.1)
+          $loaderDir = Join-Path $versions 'fabric-loader-0.19.5-1.20.1'
+          if (-not (Test-Path $loaderDir)) { throw "Fabric-Versionsprofil fehlt: versions\fabric-loader-0.19.5-1.20.1" }
+
+          # 3) Idempotenz: es darf nur EIN Backup-Zeitstempel geben (aus dem allerersten Rollingstate),
+          #    und nach dem ersten Lauf war mods\ leer -> 0 Backups beim ersten Lauf.
+          $stamps = @(Get-ChildItem $backup -Directory -ErrorAction SilentlyContinue)
+          if ($stamps.Count -ne 0) { throw "Bei frischer Installation darf kein Backup entstehen, gefunden: $($stamps.Count)" }
+
+          # Keine Platzhalter/Fremddateien
+          $unknown = @(Get-ChildItem $modsDir -File | Where-Object { $_.Name -notin $expected.filename })
+          if ($unknown.Count -gt 0) { throw "Unerwartete Datei in mods\: $($unknown.Name -join ', ')" }
+
+          Write-Host "OK: 7/7 Mods mit exakter Groesse, Fabric Loader 0.19.5 installiert, 0 Backups beim Frischstart."
+          # Transcript fuer die Summary
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n#### Frische Installation`n``````text`n$(Get-Content "$env:TEMP\install-1.log" -Raw)`n``````"
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n#### Zweiter Lauf`n``````text`n$(Get-Content "$env:TEMP\install-2.log" -Raw)`n``````"
+
+      - name: "Idempotenz-Test mit Schnutz-Dateien"
         shell: pwsh
         run: |
-          $mods = (Get-ChildItem "$env:TEMP\mc-selftest\mods" -Filter '*.jar').Count
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n## Lauf 1 (frisch)`n`n``````text`n$(Get-Content "$env:TEMP\install-1.log" -Raw)`n``````"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n## Lauf 2 (idempotent)`n`n``````text`n$(Get-Content "$env:TEMP\install-2.log" -Raw)`n``````"
-          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value "`n**JARs in mods\\:** $mods / 7"
+          $ErrorActionPreference = 'Stop'
+          $modsDir = "$env:TEMP\mc-selftest\mods"
+          $backup  = "$env:TEMP\mc-selftest\mods-backup"
+          # Unbekannte + falsche-Version JARs hinzufuegen
+          Set-Content -Path (Join-Path $modsDir 'irgendeine-alte-mod.jar') -Value 'junk'
+          Set-Content -Path (Join-Path $modsDir 'sodium-fabric-0.4.10+minecraft1.20.1.jar') -Value 'old-sodium'
+          .\install.ps1 -GameDir "$env:TEMP\mc-selftest"
+          # Beide Dateien muessen jetzt im Zeitstempel-Ordner liegen
+          $moved = @(Get-ChildItem $backup -Recurse -File -Filter '*.jar')
+          $names = $moved.Name -join ';'
+          if ($names -notmatch 'irgendeine-alte-mod\.jar')  { throw "unbekannte JAR nicht gesichert: $names" }
+          if ($names -notmatch 'sodium-fabric-0\.4\.10')    { throw "alte Sodium-Version nicht gesichert: $names" }
+          # Und die 7 Originale sind weiterhin intakt
+          $count = @(Get-ChildItem $modsDir -Filter '*.jar').Count
+          if ($count -ne 7) { throw "mods\ soll weiterhin 7 JARs haben, hat $count" }
+          Write-Host "OK: Schmutz-Dateien wurden korrekt nach mods-backup\ verschoben, Originale bleiben intakt."
