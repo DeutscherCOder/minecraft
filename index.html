@@ -3,116 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dreamshift · Minecraft 1.20.1 + Fabric</title>
-  <meta name="description" content="Idempotenter Installer für Minecraft 1.20.1 + Fabric: Dreamshift und alle Abhängigkeiten, manifest-basiert. Behalten, Backup, Download.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <title>Mods-Index</title>
+  <meta name="description" content="Mods-Index, generiert aus config/mods.json">
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <div class="stars" aria-hidden="true"></div>
-
-  <header class="hero">
-    <p class="eyebrow">MODPACK-INSTALLER · FABRIC · 1.20.1</p>
-    <h1>Dreamshift<span class="blink">_</span></h1>
-    <p class="tagline">Ready to slip out of reality..?</p>
-    <p class="sub">
-      Ein idempotenter Installer, der <strong>Minecraft 1.20.1 + Fabric</strong> sowie
-      <strong id="hero-modcount">7 Mods</strong> einrichtet — manifest-basiert über
-      <code>config/mods.json</code>. Gleicher Befehl, zehnmal ausgeführt, kein Chaos.
-    </p>
-
-    <div class="cmdbox">
-      <div class="cmdbox-head">
-        <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
-        <span class="cmdbox-title">PowerShell öffnen (Win&nbsp;+&nbsp;R → „powershell“) und das hier einfügen:</span>
-        <button class="copy" data-copy-target="cmd-full" type="button">Kopieren</button>
-      </div>
-      <pre id="cmd-full" class="copy-source">Set-ExecutionPolicy -Scope Process Bypass -Force; $i="$env:TEMP\dreamshift.zip"; Invoke-WebRequest -Uri 'https://github.com/DeutscherCOder/minecraft/archive/refs/heads/main.zip' -OutFile $i; Expand-Archive -Path $i -DestinationPath "$env:TEMP\dreamshift" -Force; &amp; "$env:TEMP\dreamshift\minecraft-main\install.ps1"</pre>
-    </div>
-
-    <p class="hint">Alternativ ohne Konsole: Repo als <a href="https://github.com/DeutscherCOder/minecraft/archive/refs/heads/main.zip">ZIP</a> laden → entpacken → <code>install.ps1</code> mit „Rechtsklick → Mit PowerShell ausführen“.</p>
-    <p class="hint">Der Befehl ist <strong>idempotent</strong> — beliebig oft ausführbar, es wird nie doppelt verschoben.</p>
-  </header>
-
-  <main>
-    <section class="panel" id="how">
-      <h2>So arbeitet der Installer</h2>
-      <ol class="steps">
-        <li><span class="num">01</span><div><strong>Minecraft finden.</strong> Standard: <code>%APPDATA%\.minecraft</code>. Für Tests: <code>-GameDir "…"</code>.</div></li>
-        <li><span class="num">02</span><div><strong>Java prüfen</strong> (≥ 17). Fehlt es, versucht das Script <code>winget install Oracle.JDK.17</code>.</div></li>
-        <li><span class="num">03</span><div><strong>Fabric CLI-Installer</strong> laden und per SHA-1/SHA-512 verifizieren.</div></li>
-        <li><span class="num">04</span><div><strong>Fabric Loader installieren</strong> — komplett ohne GUI, idempotent.</div></li>
-        <li><span class="num">05</span><div><strong>mods/ analysieren</strong> — jede .jar wird nach <code>config/mods.json</code> eingestuft.</div></li>
-        <li><span class="num">06</span><div><strong>Ergebnis:</strong> Behalten / Backup (Zeitstempel) / Download. Fertig.</div></li>
-      </ol>
-    </section>
-
-    <section class="panel" id="rules">
-      <h2>Die Regeln (Manifest)</h2>
-      <p class="note">Exakt das gewünschte Verhalten — nicht „alles in einen Ordner schieben“:</p>
-      <div class="tablewrap">
-        <table class="rules">
-          <thead><tr><th>Situation in <code>mods/</code></th><th>Entscheidung</th></tr></thead>
-          <tbody id="rules-body"></tbody>
-        </table>
-      </div>
-      <p class="note-b">Backups landen mit Zeitstempel in <code>mods-backup\2026-09-23_12-45-00\…</code> — inklusive <code>mods-backup.manifest.json</code> mit Bewegungsprotokoll.</p>
-    </section>
-
-    <section class="panel" id="index">
-      <h2>Der Index — Mods &amp; Versionen</h2>
-      <p class="note">Diese Tabelle wird live aus <code id="cfg-path">config/mods.json</code> gerendert — der einzigen Datenquelle für Installer und Website.</p>
-      <div class="tablewrap">
-        <table class="mods">
-          <thead>
-            <tr><th>Mod</th><th>Version</th><th>Datei</th><th>Größe</th><th>SHA-1 (gekürzt)</th><th></th></tr>
-          </thead>
-          <tbody id="mods-body">
-            <tr><td colspan="6" class="loading">Lade Mod-Liste…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel" id="commands">
-      <h2>Copy-Paste-Index (Selbermachen)</h2>
-      <p class="note">Die exakten Kommandos, falls du den Ablauf manuell nachvollziehen willst.</p>
-
-      <h3>1 · Fabric Loader (offiziell, ohne GUI)</h3>
-      <div class="cmdbox">
-        <div class="cmdbox-head"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="cmdbox-title">fabric-installer CLI</span><button class="copy" data-copy-target="cmd-fabric" type="button">Kopieren</button></div>
-        <pre id="cmd-fabric" class="copy-source">java -jar fabric-installer-1.1.2.jar client -dir "%APPDATA%\.minecraft" -mcversion "1.20.1" -loader "0.19.5"</pre>
-      </div>
-
-      <h3>2 · Jeden Mod direkt von Modrinth (URL aus config/mods.json)</h3>
-      <ul class="urls" id="urls-list"></ul>
-
-      <h3>3 · Idempotenz prüfen (Offline-Trockenlauf)</h3>
-      <div class="cmdbox">
-        <div class="cmdbox-head"><span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span><span class="cmdbox-title">nur Backup-Regeln, kein Netz</span><button class="copy" data-copy-target="cmd-offline" type="button">Kopieren</button></div>
-        <pre id="cmd-offline" class="copy-source">powershell -NoProfile -ExecutionPolicy Bypass -File "install.ps1" -Offline -GameDir "$env:TEMP\mc-test"</pre>
-      </div>
-    </section>
-
-    <section class="panel" id="extend">
-      <h2>Mod hinzufügen / Version ändern</h2>
-      <p class="note">Alles steckt in zwei Dateien — keine Logik im Weg:</p>
-      <ul class="plain">
-        <li><code>config/mods.json</code> — Mods, exakte Versionen, URLs, SHA-1/SHA-512, Dateinamen-Muster (<code>match</code>).</li>
-        <li><code>config/installer.json</code> — Minecraft-Version, Loader-Version, Fabric-Installer mit Prüfsummen.</li>
-        <li><code>install.ps1</code> — konsumiert nur diese Manifeste (Regeln: Behalten / Backup / Download).</li>
-        <li><code>tests/test-offline.ps1</code> — Offline-Selbsttest; <code>.github/workflows/selftest.yml</code> — echter Windows-Selbsttest per GitHub Actions.</li>
-      </ul>
-      <p class="note-b">Bei einer neuen Version einfach die Modrinth-Versions-API abfragen und URL+Hashes austauschen — der Rest bleibt identisch und idempotent.</p>
-    </section>
-  </main>
-
-  <footer>
-    <p>Dreamshift von <a href="https://modrinth.com/mod/dreamshift" target="_blank" rel="noopener">multision</a> · Mods von <a href="https://modrinth.com" target="_blank" rel="noopener">Modrinth</a> · Installer-Daten verifiziert am <span id="verified-on">2026-09-23</span> · Kein Support durch Mojang.</p>
-  </footer>
-
+  <div class="wrap">
+    <main id="app">
+      <p class="loading">Lade config/mods.json …</p>
+    </main>
+  </div>
   <script src="assets/site.js"></script>
 </body>
 </html>
