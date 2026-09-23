@@ -13,7 +13,6 @@
 (function () {
   'use strict';
 
-  var BRANCH = 'main';     // Standard-Branch fürs Raw-Fallback
   var CFG = 'config/mods.json';
   var META_ORDER = ['name', 'description', 'minecraft', 'loader', 'source', 'rule'];
   var LIST_FIELDS = ['movedFrom', 'movedTo'];
@@ -53,6 +52,10 @@
   // Domain (Fallback für die Raw-URL)
   // ------------------------------------------------------------------
   function domain() {
+    // Nur unter http(s) lassen sich owner/repo aus der Pages-URL ableiten.
+    // Bei file:// gibt es keine sinnvolle GitHub-Quelle -> leer lassen,
+    // dann zeigt fail() eine klare Anleitung.
+    if (window.location.protocol === 'file:') { return { owner: '', repo: '', path: '' }; }
     var parts = (window.location.pathname || '').replace(/\/$/, '').split('/').filter(Boolean);
     if (parts.length >= 2) { return { owner: parts[0], repo: parts[1], path: parts.slice(2).join('/') }; }
     var h = (window.location.hostname || '').split('.');
@@ -274,40 +277,79 @@
   // Loader
   // ------------------------------------------------------------------
   function request(url, done) {
+    console.log('[mods-index] lade:', url);
     var x = new XMLHttpRequest();
-    x.open('GET', url, true);
+    try { x.open('GET', url, true); } catch (e) { return done(e); }
     x.onreadystatechange = function () {
-      if (x.readyState === 4) {
-        if (x.status === 200) { try { done(null, JSON.parse(x.responseText)); } catch (e) { done(e); } }
-        else { done(new Error('HTTP ' + x.status)); }
+      if (x.readyState !== 4) return;
+      if (x.status === 200 || x.status === 304) {
+        try { done(null, JSON.parse(x.responseText || '')); }
+        catch (e) { done(new Error('kein JSON (' + e + ')')); }
+      } else if (x.status === 0) {
+        done(new Error('Netzwerk-/CORS-Fehler'));
+      } else {
+        done(new Error('HTTP ' + x.status));
       }
     };
-    x.onerror = function () { done(new Error('netzwerkfehler')); };
-    x.send(null);
+    x.onerror = function () { done(new Error('Netzwerkfehler')); };
+    try { x.send(null); } catch (e) { done(e); }
+  }
+
+  function theBranch(cb) {
+    if (window.__BRANCH__) return cb(window.__BRANCH__);
+    // Der aktuelle Branch via GitHub-API (falls erreichbar), sonst 'main'.
+    var d = domain();
+    if (!d.owner || !d.repo) return cb('main');
+    var x = new XMLHttpRequest();
+    try { x.open('GET', 'https://api.github.com/repos/' + d.owner + '/' + d.repo); } catch (e) { return cb('main'); }
+    var t = setTimeout(function () { x.abort(); cb('main'); }, 2500);
+    x.onreadystatechange = function () {
+      if (x.readyState !== 4) return;
+      clearTimeout(t);
+      try {
+        var j = JSON.parse(x.responseText || '');
+        cb((j && j.default_branch) || 'main');
+      } catch (e) { cb('main'); }
+    };
+    x.onerror = function () { clearTimeout(t); cb('main'); };
+    try { x.send(null); } catch (e) { clearTimeout(t); cb('main'); }
+  }
+
+  function sources(rel, done) {
+    var d = domain();
+    var list = [];
+    // Nur relative Quellen, wenn wir ueber http(s) geladen wurden (file:// -> CORS-blockiert).
+    if (window.location.protocol !== 'file:') { list.push(rel); }
+    if (d.owner && d.repo) {
+      theBranch(function (b) {
+        var base = d.path ? d.path + '/' : '';
+        list.push('https://raw.githubusercontent.com/' + d.owner + '/' + d.repo + '/' + b + '/' + base + rel);
+        list.push('https://cdn.jsdelivr.net/gh/' + d.owner + '/' + d.repo + '@' + b + '/' + base + rel);
+        done(list);
+      });
+    } else {
+      done(list);
+    }
   }
 
   function loadInstaller() {
-    var d = domain();
-    var candidates = ['config/installer.json'];
-    if (d.owner && d.repo) {
-      candidates.push('https://raw.githubusercontent.com/' + d.owner + '/' + d.repo + '/' + BRANCH +
-                      (d.path ? '/' + d.path : '') + '/config/installer.json');
-    }
-    tryEach(candidates, 0, function (err, inst) {
-      var box = document.getElementById('installer');
-      if (!box) return;
-      if (err || !isObj(inst)) {
-        box.innerHTML = '<p class="note">config/installer.json: ' + esc(err ? err.message : 'nicht gefunden') + '</p>';
-        return;
-      }
-      renderInstaller(inst);
+    sources('config/installer.json', function (cands) {
+      tryEach(cands, 0, function (err, inst) {
+        var box = document.getElementById('installer');
+        if (!box) return;
+        if (err || !isObj(inst)) {
+          box.innerHTML = '<p class="note">config/installer.json: ' + esc(err ? err.message : 'nicht gefunden') + '</p>';
+          return;
+        }
+        renderInstaller(inst);
+      });
     });
   }
 
   function tryEach(urls, i, done) {
-    if (i >= urls.length) { return done(new Error('alle Quellen fehlgeschlagen')); }
+    if (i >= urls.length) { return done(new Error('keine Quelle erreichbar')); }
     request(urls[i], function (err, data) {
-      if (err) { return tryEach(urls, i + 1, done); }
+      if (err) { console.warn('[mods-index] Quelle fehlgeschlagen:', urls[i], err.message); return tryEach(urls, i + 1, done); }
       done(null, data);
     });
   }
@@ -315,9 +357,9 @@
   function fail(msg) {
     var app = document.getElementById('app');
     if (app) {
-      app.innerHTML = '<p class="error">config/mods.json konnte nicht geladen werden. ' +
-        'Details: ' + esc(msg || 'unbekannt') + '<br>' +
-        'Erwartet wird die Datei neben index.html (config/mods.json) oder im Repo.</p>';
+      app.innerHTML = '<p class="error">config/mods.json konnte nicht geladen werden (' + esc(msg || 'unbekannt') + '). ' +
+        'Falls du die Seite lokal (file://) geoeffnet hast, biete sie bitte ueber einen lokalen Server aus ' +
+        '(z. B. <code>python -m http.server</code>) oder oeffne sie auf GitHub Pages.</p>';
     }
   }
 
@@ -325,16 +367,15 @@
   // Start
   // ------------------------------------------------------------------
   function boot() {
-    var d = domain();
-    var candidates = [CFG];
-    if (d.owner && d.repo) {
-      candidates.push('https://raw.githubusercontent.com/' + d.owner + '/' + d.repo + '/' + BRANCH +
-                      (d.path ? '/' + d.path : '') + '/' + CFG);
-    }
-    tryEach(candidates, 0, function (err, data) {
-      if (err || !isObj(data)) { return fail(err ? err.message : 'ungültiges JSON'); }
-      render(data);
-      renderMetaOptional(data);
+    sources(CFG, function (cands) {
+      // Timeout-Fallback: fehlende Quelle klar melden statt ewig zu laden.
+      var timer = setTimeout(function () { fail('Zeitueberschreitung beim Laden'); }, 12000);
+      tryEach(cands, 0, function (err, data) {
+        clearTimeout(timer);
+        if (err || !isObj(data)) { return fail(err ? err.message : 'ungueltiges JSON'); }
+        render(data);
+        renderMetaOptional(data);
+      });
     });
   }
 
