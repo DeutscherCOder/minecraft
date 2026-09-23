@@ -1,0 +1,136 @@
+{
+  "_meta": {
+    "schema": 1,
+    "name": "Dreamshift Mod-Set",
+    "description": "Feste Mod-Liste fuer Minecraft 1.20.1 + Fabric: Dreamshift + alle noetigen Abhaengigkeiten. Einzige Datenquelle fuer install.ps1 und die Website.",
+    "minecraft": "1.20.1",
+    "loader": "fabric",
+    "source": "Modrinth (https://modrinth.com)",
+    "rule": {
+      "keep": "Datei in mods/ mit bekanntem Dateinamen und stimmender Pruefsumme -> behalten",
+      "backup": "gleiche Mod mit anderer Version ODER unbekannte .jar -> nach mods-backup/<zeitstempel>/ verschieben",
+      "download": "fehlende/defekte Mod -> von Modrinth herunterladen und SHA-1/SHA-512 pruefen"
+    }
+  },
+  "mods": [
+    {
+      "id": "architectury",
+      "modId": "architectury",
+      "title": "Architectury API",
+      "version": "9.2.14",
+      "project": "architectury-api",
+      "homepage": "https://modrinth.com/mod/architectury-api",
+      "filename": "architectury-9.2.14-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/lhGA9TYQ/versions/WbL7MStR/architectury-9.2.14-fabric.jar",
+      "size": 585207,
+      "sha1": "4fa65e32dbf63a871a30fe8ec6fbff9a4b8d007d",
+      "sha512": "4cb8f009fd522d68a795d2cf5a657bdbe248b32ba7c33cd968f5ab521e9d60e198f8a3f6c50e7d960a2b8f50375116be0db1fd44b5710ea758697d8ea70d15de",
+      "match": [
+        "^architectury(-|_)",
+        "^architectury-api(-|_)"
+      ]
+    },
+    {
+      "id": "cloth-config",
+      "modId": "cloth-config",
+      "title": "Cloth Config API",
+      "version": "11.1.136",
+      "project": "cloth-config",
+      "homepage": "https://modrinth.com/mod/cloth-config",
+      "filename": "cloth-config-11.1.136-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/2xQdCMyG/cloth-config-11.1.136-fabric.jar",
+      "size": 1172214,
+      "sha1": "d5fe84a0cc9ed5c7290a76ba570e1f8716afecab",
+      "sha512": "2da85c071c854223cc30c8e46794391b77e53f28ecdbbde59dc83b3dbbdfc74be9e68da9ed464e7f98b4361033899ba4f681ebff1f35edc2c60e599a59796f1c",
+      "match": [
+        "^cloth-config(-|_)",
+        "^cloth_config(-|_)"
+      ]
+    },
+    {
+      "id": "fabric-api",
+      "modId": "fabric-api",
+      "title": "Fabric API",
+      "version": "0.92.12+1.20.1",
+      "project": "fabric-api",
+      "homepage": "https://modrinth.com/mod/fabric-api",
+      "filename": "fabric-api-0.92.12+1.20.1.jar",
+      "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/rvI2dfzR/fabric-api-0.92.12%2B1.20.1.jar",
+      "size": 2137232,
+      "sha1": "3e9cdd3e2f827ca9a259df9eb8e31949437b6bd4",
+      "sha512": "de9da2344043b3e9ef9fb7dbfff5f2577b06000c4f73f2a37959a80123141169084cece19133bd299b45feaaa4648bdaca2ea085684888cc8c55cc9134a477ca",
+      "match": [
+        "^fabric-api(-|_)"
+      ],
+      "note": "Exakt die Version aus deinem Screenshot (0.92.12+1.20.1), nicht stillschweigend ersetzt."
+    },
+    {
+      "id": "immersive-portals",
+      "modId": "immersive_portals",
+      "title": "Immersive Portals",
+      "version": "5.2.0",
+      "project": "immersive-portals",
+      "homepage": "https://modrinth.com/mod/immersiveportals",
+      "filename": "immersive-portals-5.2.0-mc1.20.1-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/zJpHMkdD/versions/fSBijwCM/immersive-portals-5.2.0-mc1.20.1-fabric.jar",
+      "size": 2934316,
+      "sha1": "e0327d781901bb6f1caa72dde38846863cf53517",
+      "sha512": "6e0f8b7673b04c9862c31cc860a062174028fdd3135eee16a147089a9b7af794ae8fb18bbf413ad1daa30d2791af3931f435668e8765fbd726bbce53f7f0fd28",
+      "match": [
+        "^immersive[-_]?portals(-|_)",
+        "^immersiveportals(-|_)"
+      ]
+    },
+    {
+      "id": "sodium",
+      "modId": "sodium",
+      "title": "Sodium",
+      "version": "0.5.13",
+      "project": "sodium",
+      "homepage": "https://modrinth.com/mod/sodium",
+      "filename": "sodium-fabric-0.5.13+mc1.20.1.jar",
+      "url": "https://cdn.modrinth.com/data/AANobbMI/versions/OihdIimA/sodium-fabric-0.5.13%2Bmc1.20.1.jar",
+      "size": 971552,
+      "sha1": "bcdbf37d9494e405cba210d7a80ed58e756297b5",
+      "sha512": "81c64f9c2d3402dfa43ee54d8f5a054f5243bfb08984e3addcab9fe885073c79c43c1c8c41e8f30b625d26a656f82a8e5f370bbbbf222ff1c08f4b324edb7ea4",
+      "match": [
+        "^sodium(-|_)"
+      ]
+    },
+    {
+      "id": "voicechat",
+      "modId": "voicechat",
+      "title": "Simple Voice Chat",
+      "version": "2.4.32",
+      "project": "simple-voice-chat",
+      "homepage": "https://modrinth.com/mod/simple-voice-chat",
+      "filename": "voicechat-fabric-1.20.1-2.4.32.jar",
+      "url": "https://cdn.modrinth.com/data/9eGKb6K1/versions/r5GmfR2B/voicechat-fabric-1.20.1-2.4.32.jar",
+      "size": 8013525,
+      "sha1": "53a7432e35ec894441d31418c01190e2ebe8933e",
+      "sha512": "c8b616077ea4b71651de2cde01b5a3c61a627cf984a571637c0a16a3602965e4481eb5c84b33b00ab27495d3e581e31e5d9f3e1e3541d04e4431c9cb0a542cc5",
+      "match": [
+        "^voicechat(-|_)",
+        "^voice_chat(-|_)"
+      ],
+      "note": "2.4.32 ist der letzte stabile 1.20.1-Release von Ende 2023 (danach kamen nur Beta-Versionen 2.5/2.6)."
+    },
+    {
+      "id": "dreamshift",
+      "modId": "dreamshift",
+      "title": "Dreamshift",
+      "version": "0.1.4.3.1",
+      "project": "dreamshift",
+      "homepage": "https://modrinth.com/mod/dreamshift",
+      "filename": "dreamshift-0.1.4.3.1-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/sdQwPACz/versions/b86Glw4w/dreamshift-0.1.4.3.1-fabric.jar",
+      "size": 515389357,
+      "sha1": "cdf5d3b6b3cea528ba0164a5962a731a7fde9161",
+      "sha512": "9d84a65218a68ccb9986f888b58645f46c4222afb7cdb1d6a097046c86480937b13ce1a781d481bb00bd1e0df34767824fa3f0229bb9ef0bdf95ac96e9457184",
+      "match": [
+        "^dreamshift(-|_)"
+      ],
+      "note": "Abhaengigkeiten (per Modrinth-API am 2026-09-23 verifiziert): Architectury API, Cloth Config API, Immersive Portals. Datei ist ~491 MB gross - der Download kann einen Moment dauern."
+    }
+  ]
+}

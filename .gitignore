@@ -1,0 +1,12 @@
+# Sandbox-/Test-Artefakte des Installers (werden im .minecraft-Verzeichnis erzeugt,
+# hier nur der Vollständigkeit, falls jemand das Repo als GameDir missbraucht)
+mods/
+mods-backup/
+.cache/
+launcher_profiles.json
+version-manifest.json
+
+# Editor/OS
+.DS_Store
+Thumbs.db
+*.log

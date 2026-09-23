@@ -1,0 +1,33 @@
+name: Selftest (Windows)
+
+on:
+  push:
+    branches: [ main, arena/* ]
+    paths: [ 'install.ps1', 'config/*', 'tests/*', '.github/workflows/*' ]
+  pull_request:
+    paths: [ 'install.ps1', 'config/*', 'tests/*', '.github/workflows/*' ]
+  workflow_dispatch:
+
+jobs:
+  selfcheck:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Selftest (echte Downloads + echter Fabric-Install)
+        shell: pwsh
+        run: |
+          mkdir -Force "$env:TEMP\mc-selftest" | Out-Null
+          .\install.ps1 -GameDir "$env:TEMP\mc-selftest"
+          Write-Host '--- Zweiter Lauf (Idempotenz) ---'
+          .\install.ps1 -GameDir "$env:TEMP\mc-selftest"
+
+      - name: Ergebnis-Verzeichnis zeigen
+        shell: pwsh
+        run: |
+          Get-ChildItem "$env:TEMP\mc-selftest\mods" | Select-Object Name, Length | Format-Table -AutoSize
+          Write-Host '--- Versionen ---'
+          Get-ChildItem "$env:TEMP\mc-selftest\versions" -Name
+          Write-Host '--- Backup ---'
+          Get-ChildItem "$env:TEMP\mc-selftest\mods-backup" -Recurse -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
